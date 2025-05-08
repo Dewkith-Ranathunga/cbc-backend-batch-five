@@ -2,6 +2,7 @@ import bodyParser from "body-parser";
 import express from "express";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import orderRouter from "./routes/orderRouter.js";
 import productRouter from "./routes/productRouter.js";
 import userRouter from "./routes/userRouter.js";
 
@@ -54,6 +55,7 @@ mongoose.connect(
 
 app.use("/product", productRouter);
 app.use("/user", userRouter);
+app.use("/order", orderRouter);
 
 
 app.listen(5000, () => {
