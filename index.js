@@ -1,4 +1,5 @@
 import bodyParser from "body-parser";
+import cors from "cors";
 import express from "express";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
@@ -12,7 +13,7 @@ const app = express();
 
 // Middleware to parse incoming JSON requests
 // This middleware allows the server to understand JSON data sent in requests
-
+app.use(cors())
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
