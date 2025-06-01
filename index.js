@@ -1,12 +1,14 @@
 import bodyParser from "body-parser";
 import cors from "cors";
+import dotenv from "dotenv";
 import express from "express";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import orderRouter from "./routes/orderRouter.js";
 import productRouter from "./routes/productRouter.js";
 import userRouter from "./routes/userRouter.js";
-
+dotenv.config();
+// This is the main entry point of the application
 
 
 const app = express();
@@ -42,9 +44,7 @@ app.use((req, res, next) => {
 
 
 
-mongoose.connect(
-    "mongodb+srv://admin:123@cluster0.xjb2uho.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-  )
+mongoose.connect(process.env.MONGODB_URL)
   .then(() => {
     console.log("Connected to MongoDB");
   })
