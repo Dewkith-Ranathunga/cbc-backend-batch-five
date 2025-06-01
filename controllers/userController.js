@@ -1,6 +1,8 @@
 import bctypt from "bcrypt";
+import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+dotenv.config();
 
 export function createUser(req, res) {
   if (req.body.role == "admin") {
@@ -66,7 +68,7 @@ export function loginUser(req, res) {
             role: user.role,
             img: user.img,
           },
-          "Dew2003kith"
+          process.env.JWT_KEY,
         );
 
         res.json({
