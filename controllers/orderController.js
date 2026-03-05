@@ -1,63 +1,63 @@
 import Order from "../models/order.js"
 import Product from "../models/product.js"
 
-export async function createOrder(req,res){
-    if(req.user == null){
+export async function createOrder(req, res) {
+    if (req.user == null) {
         res.status(403).json({
-            message : "Please login and try again"
+            message: "Please login and try again"
         })
         return
     }
 
     const orderInfo = req.body
 
-    if(orderInfo.name == null){
-        orderInfo.name = req.user.firstName + " " + req.user.lastName  
+    if (orderInfo.name == null) {
+        orderInfo.name = req.user.firstName + " " + req.user.lastName
     }
 
     //CBC00001
     let orderId = "CBC00001"
 
-    const lastOrder = await Order.find().sort({date : -1}).limit(1)
+    const lastOrder = await Order.find().sort({ date: -1 }).limit(1)
     //[]
-    if(lastOrder.length > 0){
-        
+    if (lastOrder.length > 0) {
+
         const lastOrderId = lastOrder[0].orderId  //"CBC00551"
-        const lastOrderNumberString = lastOrderId.replace("CBC","")//"00551"
+        const lastOrderNumberString = lastOrderId.replace("CBC", "")//"00551"
         const lastOrderNumber = parseInt(lastOrderNumberString)//551
         const newOrderNumber = lastOrderNumber + 1 //552
         const newOrderNumberString = String(newOrderNumber).padStart(5, '0');
-        orderId = "CBC"+newOrderNumberString//"CBC00552"
-    }    
-    try{
+        orderId = "CBC" + newOrderNumberString//"CBC00552"
+    }
+    try {
         let total = 0;
         let labelledTotal = 0;
         const products = []
 
-        for(let i=0; i<orderInfo.products.length; i++){
-                       
-            const item = await Product.findOne({productId : orderInfo.products[i].productId})
-            if(item == null){
+        for (let i = 0; i < orderInfo.products.length; i++) {
+
+            const item = await Product.findOne({ productId: orderInfo.products[i].productId })
+            if (item == null) {
                 res.status(404).json({
-                    message : "Product with productId " + orderInfo.products[i].productId + " not found"
+                    message: "Product with productId " + orderInfo.products[i].productId + " not found"
                 })
                 return
             }
-            if(item.isAvailable == false){
+            if (item.isAvailable == false) {
                 res.status(404).json({
-                    message : "Product with productId " + orderInfo.products[i].productId + " is not available right now!"
+                    message: "Product with productId " + orderInfo.products[i].productId + " is not available right now!"
                 })
                 return
             }
             products[i] = {
-                productInfo : {
-                    productId : item.productId,
-                    name : item.name,
-                    altNames : item.altNames,
-                    description : item.description,
-                    images : item.images,
-                    labelledPrice : item.labelledPrice,
-                    price : item.price
+                productInfo: {
+                    productId: item.productId,
+                    name: item.name,
+                    altNames: item.altNames,
+                    description: item.description,
+                    images: item.images,
+                    labelledPrice: item.labelledPrice,
+                    price: item.price
                 },
                 quantity: orderInfo.products[i].qty
             }
@@ -69,25 +69,25 @@ export async function createOrder(req,res){
 
 
         const order = new Order({
-            orderId : orderId,
-            email : req.user.email,
-            name : orderInfo.name,
-            address : orderInfo.address,
-            total : 0,
-            phone : orderInfo.phone,
-            products : products,
-            labelledTotal : labelledTotal,
-            total : total
+            orderId: orderId,
+            email: req.user.email,
+            name: orderInfo.name,
+            address: orderInfo.address,
+            total: 0,
+            phone: orderInfo.phone,
+            products: products,
+            labelledTotal: labelledTotal,
+            total: total
         })
-        const createdOrder =  await order.save()
+        const createdOrder = await order.save()
         res.json({
-            message : "Order created successfully",
-            order : createdOrder
+            message: "Order created successfully",
+            order: createdOrder
         })
-    }catch(err){
+    } catch (err) {
         res.status(500).json({
-            message : "Failed to create order",
-            error : err
+            message: "Failed to create order",
+            error: err
         })
     }
     //add current users name if not provided
@@ -96,58 +96,65 @@ export async function createOrder(req,res){
 }
 
 export async function getOrders(req, res) {
-	if (req.user == null) {
-		res.status(403).json({
-			message: "Please login and try again",
-		});
-		return;
-	}
-	try {
-		if (req.user.role == "admin") {
+    if (req.user == null) {
+        res.status(403).json({
+            message: "Please login and try again",
+        });
+        return;
+    }
+    try {
+        if (req.user.role == "admin") {
             const orders = await Order.find();
             res.json(orders);
-		}else{
+        } else {
             const orders = await Order.find({ email: req.user.email });
             res.json(orders);
         }
-	} catch (err) {
-		res.status(500).json({
-			message: "Failed to fetch orders",
-			error: err,
-		});
-	}
+    } catch (err) {
+        res.status(500).json({
+            message: "Failed to fetch orders",
+            error: err,
+        });
+    }
 }
 
-export async function updateOrderStatus(req,res){
-	if (!isAdmin(req)) {
-		res.status(403).json({
-			message: "You are not authorized to update order status",
-		});
-		return;
-	}
-	try{
-		const orderId = req.params.orderId;
-		const status = req.params.status;
+export async function updateOrderStatus(req, res) {
+    if (req.user == null) {
+        res.status(403).json({
+            message: "Please login to update order status",
+        });
+        return;
+    }
 
-		await Order.updateOne(
-			{
-				orderId: orderId
-			},
-			{
-				status : status
-			}
-		)
+    if (req.user.role != "admin") {
+        res.status(403).json({
+            message: "Only admin users can update order status. Your role: " + req.user.role,
+        });
+        return;
+    }
+    try {
+        const orderId = req.params.orderId;
+        const status = req.params.status;
 
-		res.json({
-			message: "Order status updated successfully",
-		});
+        await Order.updateOne(
+            {
+                orderId: orderId
+            },
+            {
+                status: status
+            }
+        )
 
-	}catch(e){
-		res.status(500).json({
-			message: "Failed to update order status",
-			error: e,
-		});
-		return;
-	}
-	
+        res.json({
+            message: "Order status updated successfully",
+        });
+
+    } catch (e) {
+        res.status(500).json({
+            message: "Failed to update order status",
+            error: e,
+        });
+        return;
+    }
+
 }
